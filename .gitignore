@@ -1,2 +1,8 @@
 .venv/
 __pycache__/
+bitcoin-cli.py
+calculate_funds.py
+def_bitcoin-cli.py
+hidden_factor.py
+listfunds.json
+weight_fee.py

@@ -10,6 +10,10 @@ plugin = Plugin()
 class CPFPError(Exception):
     pass
 
+plugin.add_option('bump_brpc_user', None, 'bitcoin rpc user')
+plugin.add_option('bump_brpc_pass', None, 'bitcoin rpc password')
+plugin.add_option('bump_brpc_port', 18443, 'bitcoin rpc port')
+
 
 def connect_bitcoincli(rpc_user="__cookie__", rpc_password=None, host="127.0.0.1", port=18443):
     """
@@ -24,22 +28,23 @@ def connect_bitcoincli(rpc_user="__cookie__", rpc_password=None, host="127.0.0.1
     Returns:
         AuthServiceProxy: The RPC connection object.
     """
-
     # try:
     #     rpc_connection_test = rpc_connection.getblockchaininfo()
 
     # Use the specified cookie file path for regtest
-    cookie_path = os.path.expanduser("~/.bitcoin/regtest/.cookie")
 
     if rpc_password is None:
         # Attempt to retrieve the cookie value from the regtest .cookie file
         try:
+            cookie_path = os.path.expanduser("~/.bitcoin/regtest/.cookie")
             with open(cookie_path, "r") as cookie_file:
                 rpc_user, rpc_password = cookie_file.read().strip().split(":")
         except FileNotFoundError:
             raise FileNotFoundError("Could not find the .cookie file. Ensure Bitcoin Core is running with cookie-based auth enabled.")
     
     rpc_url = f"http://{rpc_user}:{rpc_password}@{host}:{port}"
+
+    plugin.log("rpc_url: %s" % rpc_url)
     
     try:
         rpc_connection = AuthServiceProxy(rpc_url)
@@ -390,7 +395,12 @@ def bumpchannelopen(plugin, txid, vout, fee_rate, address, **kwargs):
     plugin.log(f"line 378: child_txid variable contains this txid: {child_txid}")
 
     # First attempt using the bitcoin rpc_connection function:
-    rpc_connection = connect_bitcoincli()
+
+    rpc_connection = connect_bitcoincli(
+        rpc_user=plugin.get_option('bump_brpc_user'),
+        rpc_password=plugin.get_option('bump_brpc_pass'),
+        port=plugin.get_option('bump_brpc_port')
+    )
     plugin.log(f"line 384: Contents of rpc_connection: {rpc_connection}")
 
     parsed_parent_hex = rpc_connection.getrawtransaction(txid)
